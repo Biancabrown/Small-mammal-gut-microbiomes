@@ -1,12 +1,13 @@
 ---
-title: "R Notebook"
+title: "Boot Strap"
 output: html_notebook
 ---
 
 ```{r}
 
-list_99<-replicate(1000, (metadata %>% group_by(Species_Name_Phylo)%>%sample_n( 1)), simplify = FALSE)
+list<-replicate(1000, (metadata %>% group_by(Species)%>%sample_n(1)), simplify = FALSE)
 
+#create empty matrices to hold each output
 mat_all<-lapply(1:1000, matrix, data= NA, nrow=14, ncol=14)
 mat_all.unifrac<-lapply(1:1000, matrix, data= NA, nrow=14, ncol=14)
 mat_all.unifrac.1<-lapply(1:1000, matrix, data= NA, nrow=14, ncol=14)
@@ -16,17 +17,19 @@ mat_all.bray<-lapply(1:1000, matrix, data= NA, nrow=14, ncol=14)
 mat_all.bray.1<-lapply(1:1000, matrix, data= NA, nrow=14, ncol=14)
 
 for(i in 1:length(list_99)){ #run a loop over the dataframes in the list
-  mod<- list_99[[i]]$SampleID_1
+  mod<- list[[i]]$SampleID_1
   colnames(mat_all[[i]]) <- mod
   rownames(mat_all[[i]]) <- mod
 }
+
+#bray curtis (see betadiversity analysis for input files (bray.sm, sm_physeq_unifrac, and sm_physeq_wunifrac)
 
 for(i in 1:length(mat_all)){
   bray.sm.max<-as.matrix(bray.sm)
   b<-bray.sm.max[rownames(bray.sm.max)%in%rownames(mat_all[[i]]),colnames(bray.sm.max)%in%colnames(mat_all[[i]])]
   mat_all.bray[[i]]<-b
-  colnames(mat_all.bray[[i]]) = list_99[[i]]$Species_Name_Phylo[match(colnames(mat_all.bray[[i]]), list_99[[i]]$SampleID_1)]
-  rownames(mat_all.bray[[i]]) = list_99[[i]]$Species_Name_Phylo[match(rownames(mat_all.bray[[i]]), list_99[[i]]$SampleID_1)]
+  colnames(mat_all.bray[[i]]) = list_99[[i]]$Species[match(colnames(mat_all.bray[[i]]), list_99[[i]]$SampleID)]
+  rownames(mat_all.bray[[i]]) = list_99[[i]]$Species[match(rownames(mat_all.bray[[i]]), list_99[[i]]$SampleID)]
 }
 
 for(i in 1:length(mat_all.unifrac)){
@@ -41,8 +44,8 @@ for(i in 1:length(mat_all)){
   sm_physeq_unifrac.max<-as.matrix(sm_physeq_unifrac)
   u<-sm_physeq_unifrac.max[rownames(sm_physeq_unifrac.max)%in%rownames(mat_all[[i]]),colnames(sm_physeq_unifrac.max)%in%colnames(mat_all[[i]])]
   mat_all.unifrac[[i]]<-u
-  colnames(mat_all.unifrac[[i]]) = list_99[[i]]$Species_Name_Phylo[match(colnames(mat_all.unifrac[[i]]), list_99[[i]]$SampleID_1)]
-  rownames(mat_all.unifrac[[i]]) = list_99[[i]]$Species_Name_Phylo[match(rownames(mat_all.unifrac[[i]]), list_99[[i]]$SampleID_1)]
+  colnames(mat_all.unifrac[[i]]) = list[[i]]$Species[match(colnames(mat_all.unifrac[[i]]), list[[i]]$SampleID)]
+  rownames(mat_all.unifrac[[i]]) = list[[i]]$Species[match(rownames(mat_all.unifrac[[i]]), list[[i]]$SampleID)]
 }
 
 for(i in 1:length(mat_all.unifrac)){
@@ -54,8 +57,8 @@ for(i in 1:length(mat_all)){
   sm_physeq_wunifrac.max<-as.matrix(sm_physeq_wunifrac)
   wu<-sm_physeq_wunifrac.max[rownames(sm_physeq_wunifrac.max)%in%rownames(mat_all[[i]]),colnames(sm_physeq_wunifrac.max)%in%colnames(mat_all[[i]])]
   mat_all.wunifrac[[i]]<-wu
-  colnames(mat_all.wunifrac[[i]]) = list_99[[i]]$Species_Name_Phylo[match(colnames(mat_all.wunifrac[[i]]), list_99[[i]]$SampleID_1)]
-  rownames(mat_all.wunifrac[[i]]) = list_99[[i]]$Species_Name_Phylo[match(rownames(mat_all.wunifrac[[i]]), list_99[[i]]$SampleID_1)]
+  colnames(mat_all.wunifrac[[i]]) = list_99[[i]]$Species[match(colnames(mat_all.wunifrac[[i]]), list_99[[i]]$SampleID)]
+  rownames(mat_all.wunifrac[[i]]) = list_99[[i]]$Species[match(rownames(mat_all.wunifrac[[i]]), list_99[[i]]$SampleID)]
 }
 
 for(i in 1:length(mat_all.unifrac)){
@@ -64,6 +67,7 @@ for(i in 1:length(mat_all.unifrac)){
 }
 
 
+#Mantel bray
 bray_out<-lapply(mat_all.bray.1, function(x, y) (mantel(x, tree_matrix_dist)))
 mantel_bray<-t(as.data.frame(sapply(bray_out, function (x) x[c('statistic')])))
 mantel_bray<-as.data.frame(mantel_bray)
@@ -72,21 +76,20 @@ sort(round(mantel_bray$V1, 3))
 summary(mantel_bray$V1)
 hist(mantel_bray$V1,main="Historgram", xlab = "Mantel R Stat", ylab = "Frequency")
 
+#Mantel unifrac
 mat_all.unifrac_out<-lapply(mat_all.unifrac.1, function(x, y) (mantel(x, tree_matrix_dist)))
 mantel_unifrac<-t(as.data.frame(sapply(mat_all.unifrac_out, function (x) x[c('statistic')])))
 mantel_unifrac<-as.data.frame(mantel_unifrac)
 median(mantel_unifrac$V1)
-
-mantel_unifrac$V1
 summary(mantel_unifrac$V1)
 sort(round(mantel_unifrac$V1, 3))
 quantile(mantel_unifrac$V1,c(0.025,0.97))
 hist(mantel_unifrac$V1,main="Historgram", xlab = "Mantel R Stat", ylab = "Frequency")
 
+#Mantel wuniFrac
 mat_all.wunifrac_out<-lapply(mat_all.wunifrac.1, function(x, y) (mantel(x, tree_matrix_dist)))
 mantel_wunifrac<-t(as.data.frame(sapply(mat_all.wunifrac_out, function (x) x[c('statistic')])))
 mantel_wunifrac<-as.data.frame(mantel_wunifrac)
-
 sort(round(mantel_wunifrac$V1, 4))
 median(mantel_wunifrac$V1)
 summary(mantel_wunifrac$V1)
@@ -95,8 +98,8 @@ quantile(mantel_wunifrac$V1,c(0.025,0.97))
 hist(mantel_wunifrac$V1,main="Historgram", xlab = "Mantel R Stat", ylab = "Frequency")
 
 
+#Robinson-Foulds
 library(phangorn)
-
 
 mat_all.wunifrac.1.dist <- lapply(mat_all.wunifrac.1, function(x, y) (dist(x)))
 mat_all.wunifrac.1.hclust <- lapply(mat_all.wunifrac.1.dist, function(x, y) (hclust(x, method="average")))
@@ -104,17 +107,14 @@ mat_all.wunifrac.1.hclust.phylo  <-lapply(mat_all.wunifrac.1.hclust, function(x,
 mat_all.wunifrac_out.rf<-lapply(mat_all.wunifrac.1.hclust.phylo, function(x, y) (RF.dist(x, tree, normalize = TRUE, check.labels=TRUE,rooted=TRUE)))
 mat_all.wunifrac_out.rf
 
-
 mat_all.unifrac.1.dist <- lapply(mat_all.unifrac.1, function(x, y) (dist(x)))
 mat_all.unifrac.1.hclust <- lapply(mat_all.unifrac.1.dist, function(x, y) (hclust(x, method="average")))
 mat_all.unifrac.1.hclust.phylo  <-lapply(mat_all.unifrac.1.hclust, function(x, y) as.phylo(x))
 mat_all.unifrac_out.rf<-lapply(mat_all.unifrac.1.hclust.phylo, function(x, y) (RF.dist(x, tree, normalize = TRUE, check.labels=TRUE,rooted=TRUE)))
 
-
 median(as.data.frame(t(as.data.frame(do.call(cbind, mat_all.unifrac_out.rf))))$V1)
 summary(as.data.frame(t(as.data.frame(do.call(cbind, mat_all.unifrac_out.rf))))$V1)
 sort(as.data.frame(t(as.data.frame(do.call(cbind, mat_all.unifrac_out.rf))))$V1)
-
 
 mat_all.bray.1.dist <- lapply(mat_all.bray.1, function(x, y) (dist(x)))
 mat_all.bray.1.hclust <- lapply(mat_all.bray.1.dist, function(x, y) (hclust(x, method="average")))
