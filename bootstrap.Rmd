@@ -1,5 +1,5 @@
 ---
-title: "Boot Strap"
+title: "Bootstrap"
 output: html_notebook
 ---
 
@@ -16,7 +16,8 @@ mat_all.wunifrac.1<-lapply(1:1000, matrix, data= NA, nrow=14, ncol=14)
 mat_all.bray<-lapply(1:1000, matrix, data= NA, nrow=14, ncol=14)
 mat_all.bray.1<-lapply(1:1000, matrix, data= NA, nrow=14, ncol=14)
 
-for(i in 1:length(list_99)){ #run a loop over the dataframes in the list
+#run a loop over the dataframes in the list
+for(i in 1:length(list)){ 
   mod<- list[[i]]$SampleID_1
   colnames(mat_all[[i]]) <- mod
   rownames(mat_all[[i]]) <- mod
